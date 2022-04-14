@@ -1,0 +1,12 @@
+node v16.13.2
+
+npm 8.1.2
+
+#############################
+
+Caso de algum erro ao executar o projeto na primeira vez, tente:
+
+npm i web-vitals --save-dev
+
+CEP-PROMISE
+npm install --save cep-promise 
