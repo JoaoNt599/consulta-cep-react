@@ -1,8 +1,18 @@
-import { useState } from "react";
-import consultarCep from 'cep-promise';
+import { useState, useEffect } from "react";
+import consultarCep, { cep } from 'cep-promise';
+import CEPDados from '../Components/CEPDados';
 
 function numbersOnly(str) {
     return str.replace(/[^\d]/g, '');
+}
+
+function translate(cepDados) {
+    return {
+        "ESTADO": cepDados.state,
+        "CIDADE": cepDados.city,
+        "BAIRRO": cepDados.neighborhood,
+        "LOGRADOURO": cepDados.street
+    }
 }
 
 function Pesquisa(props) {
@@ -11,23 +21,35 @@ function Pesquisa(props) {
     const ticket = props.ticket;
     const setResultado = props.setResultado;
     const [cepNumber, setCepNumber] = useState("");
+    const [cepFavorito, setCepFavorito] = useState("");
+    const [cepDados, setCepDados] = useState({});
+
+
+    useEffect(() => {
+        const storedCep = localStorage.getItem("cepFavorito") || "";
+        setCepFavorito(storedCep);
+    },[]);
+
+    useEffect(() => {
+
+        if(!cepFavorito) {
+            return;
+        }
+
+        localStorage.setItem("cepFavorito", cepFavorito);
+        consultarCep(cepFavorito)
+            .then(resultado => setCepDados(resultado))
+            .catch(err => setCepDados({"ERRO": err.message}))
+    },[cepFavorito]);
 
     function handleChange(evt) {
         const value = evt.target.value;
         setCepNumber(numbersOnly(value));
     }
 
-    function clear() {
-        setCepNumber("");
-    }
 
-    function handleSuccess(dadosCEP) {
-        const resultado = {
-            "ESTADO": dadosCEP.state,
-            "CIDADE": dadosCEP.city,
-            "BAIRRO": dadosCEP.neighborhood,
-            "LOGRADOURO": dadosCEP.street
-        }
+    function handleSuccess(cepDados) {
+        const resultado = translate(cepDados);
         setResultado(resultado);
         goTo("RESULTADOS");
     }
@@ -47,12 +69,19 @@ function Pesquisa(props) {
         .catch(err => currentTickt == ticket.current && handleError(err))
     }
 
+    function handleAdicionarFavorito() {
+        setCepFavorito(cepNumber);
+    }
+
     return <>
           <p>{textoTopo}</p>
-          <p>Estado atual: {cepNumber}</p>
+          <p>CEP atual: {cepNumber}</p>
           <input value={numbersOnly (cepNumber)} onChange={handleChange}/>
-          <button onClick={clear}>LIMPAR STATE</button>
           <button onClick={handleSearch}>CONSULTAR</button>
+          <button onClick={handleAdicionarFavorito}>SALVAR FAVORITO</button>
+          <br/>
+          <p>Favorito: {cepFavorito}</p>
+          <CEPDados cepDados={translate(cepDados)}/>
     </>
     
 }
